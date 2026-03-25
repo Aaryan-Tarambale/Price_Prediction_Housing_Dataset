@@ -1,4 +1,4 @@
-# Taiwan Housing Price Prediction
+# Housing Price Prediction
 
 **Tools:** Python · Scikit-learn · Pandas · Matplotlib · Seaborn  
 **Domain:** Real Estate · Regression Modeling  
