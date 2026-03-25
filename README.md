@@ -1,61 +1,125 @@
-# Housing Price Prediction – Taiwan Real Estate
+# Taiwan Housing Price Prediction
 
-### This project focuses on predicting residential property prices in Taiwan using supervised machine learning techniques. The objective was to identify the key drivers of housing prices and build models capable of generating accurate out-of-sample predictions.
+**Tools:** Python · Scikit-learn · Pandas · Matplotlib · Seaborn  
+**Domain:** Real Estate · Regression Modeling  
+**Type:** Supervised machine learning — regression
 
-## Project Overview
+---
 
-Using the Taiwan Real Estate Valuation dataset, the workflow included:
+## Overview
 
-	•	Data cleaning and preprocessing
-	•	Exploratory data analysis (EDA)
-	•	Feature engineering
-	•	Model training and comparison
-	•	Performance evaluation
+This project predicts real estate prices in Sindian District, New Taipei City, Taiwan using historical transaction data. The dataset contains 414 property records with features covering location, age, proximity to transport, and nearby amenities.
 
-The dataset contains variables such as transaction date, house age, distance to MRT stations, number of nearby convenience stores, and geographic coordinates. The target variable is house price per unit area.
+The project follows a structured modeling approach — start with linear regression as a baseline, evaluate performance against a threshold (R² ≥ 0.85), and move to tree-based models if the linear model falls short. It also includes a deliberate step to handle outliers, which had a significant impact on test set performance.
 
+---
 
+## Dataset
 
-**Models Implemented**
+| Property | Detail |
+|---|---|
+| Source | UCI ML Repository — Real Estate Valuation Dataset |
+| Records | 414 |
+| Target | House price per unit area |
+| Features | 6 |
 
-	•	Linear Regression
-	•	Random Forest Regressor
-	•	Gradient Boosting Regressor
+**Features:**
+| Feature | Description |
+|---|---|
+| Transaction date | Year and month of sale |
+| House age | Age of the property in years |
+| Distance to nearest MRT | Distance in meters |
+| Number of convenience stores | Count within walking distance |
+| Latitude | Geographic coordinate |
+| Longitude | Geographic coordinate |
 
-**Model performance was evaluated using:**
+---
 
-	•	R² (coefficient of determination)
-	•	Mean Squared Error (MSE)
-	•	Cross-validation to ensure robustness
+## Methodology
 
+### 1. Exploratory Data Analysis
+- Correlation analysis revealed that distance to MRT has the strongest negative correlation with price — the further from public transport, the lower the price
+- Number of convenience stores and latitude showed positive correlations
+- House age and transaction date had minimal predictive value
+- Target variable was roughly bell-shaped with a few high-price outliers
 
-**Results**
+### 2. Baseline — Linear Regression
 
-	•	Tree-based ensemble models significantly outperformed linear regression.
-	•	Gradient Boosting achieved the strongest predictive performance, delivering the highest R² and lowest MSE among the tested models.
-	•	Random Forest also performed well, capturing nonlinear patterns that linear regression could not fully model.
-	•	Linear regression provided a useful baseline but struggled with complex interactions between features.
+| Metric | Training | Test |
+|---|---|---|
+| R² | 0.565 | 0.657 |
+| MSE | 81.57 | 59.52 |
 
-**Feature importance analysis revealed that:**
+Performance fell well below the 0.85 threshold, indicating the price-feature relationships are non-linear. This justified moving to ensemble methods.
 
-	•	Distance to MRT stations was one of the strongest predictors of property value.
-	•	The number of nearby convenience stores had a positive relationship with prices.
-	•	House age showed a negative correlation with price per unit area.
+### 3. Random Forest Regressor
 
-Overall, ensemble methods demonstrated superior ability to model nonlinear relationships and feature interactions present in real estate pricing data.
+| Metric | Training | Test (original) |
+|---|---|---|
+| R² | 0.955 | 0.720 |
+| MSE | 8.40 | 48.59 |
 
+Strong training performance but a notable gap to test — suggesting the model was being affected by outliers in the test data.
 
+### 4. Gradient Boosting Regressor
 
-## **Conclusion**
+| Metric | Training | Test (original) |
+|---|---|---|
+| R² | 0.934 | 0.675 |
+| MSE | 12.46 | 56.55 |
 
-This project highlights the importance of model selection in regression problems involving structured, real-world data.
+Similar pattern — good training, moderate test performance.
 
-While linear regression offers interpretability and simplicity, ensemble methods such as Random Forest and Gradient Boosting provide substantially better predictive performance when relationships are nonlinear.
+### 5. Outlier Removal
 
-Key takeaways:
+Properties with prices above the 3rd quartile threshold were identified and removed from the training set. The cleaned dataset was then used to retrain both models.
 
-	•	Location-based variables play a critical role in price determination.
-	•	Nonlinear modeling techniques can meaningfully improve prediction accuracy.
-	•	Cross-validation is essential to obtain reliable performance estimates.
+**Impact on Random Forest (cleaned data):**
 
-This project demonstrates a complete end-to-end machine learning workflow, from data exploration to model comparison and interpretation, with a strong focus on both predictive accuracy and practical insight.
+| Metric | Training | Test |
+|---|---|---|
+| R² | 0.952 | **0.835** |
+| MSE | 8.34 | **28** |
+
+This was the decisive improvement — test R² jumped from 0.720 to 0.835 after outlier removal.
+
+---
+
+## Results
+
+**Best model: Random Forest on cleaned dataset**
+
+| Metric | Value |
+|---|---|
+| Test R² | 0.835 |
+| Test MSE | 24.42 |
+
+**Sample predictions on 5 random test cases:**
+
+| Actual Price | Predicted Price | % Error |
+|---|---|---|
+| 56.8 | 52.99 | 6.71% |
+| 25.6 | 24.90 | 2.75% |
+| 40.6 | 38.84 | 4.35% |
+| 39.3 | 40.53 | 3.12% |
+| 51.7 | 42.09 | 18.60% |
+
+4 out of 5 predictions fell within a 7% error margin. The one outlier (18.6% error) was a high-value property — edge cases like these still present a challenge.
+
+---
+
+## Key Findings
+
+1. MRT proximity is the strongest price driver — this is consistent with urban real estate behavior globally, not just Taiwan.
+2. Linear models are insufficient for real estate pricing — the non-linear relationships between location features and price require ensemble approaches.
+3. Outlier removal had a bigger impact than model selection — going from 0.720 to 0.835 R² was almost entirely due to cleaning the training data, not switching algorithms.
+4. Feature importance from Random Forest confirmed that distance to MRT, latitude, and number of convenience stores were the top three predictors.
+
+---
+
+## Limitations
+
+- 414 records is a small dataset — predictions on edge cases (very high or very low price properties) are less reliable
+- The dataset is geographically limited to one district in New Taipei City
+- Transaction date was dropped but could carry useful seasonality information
+- Cross-validation was not applied to the final model — should be added for more robust evaluation
